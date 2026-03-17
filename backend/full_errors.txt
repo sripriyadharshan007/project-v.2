@@ -1,0 +1,15 @@
+﻿src/execution/execution.service.ts(21,28): error TS2353: Object literal may only specify known properties, and 'isInitial' does not exist in type 'StepWhereInput'.
+src/execution/execution.service.ts(32,9): error TS2322: Type '"RUNNING"' is not assignable to type 'ExecutionStatus'.
+src/execution/execution.service.ts(46,23): error TS2367: This comparison appears to be unintentional because the types 'ExecutionStatus' and '"RUNNING"' have no overlap.
+src/execution/execution.service.ts(60,31): error TS2339: Property 'context' does not exist on type '{ data: JsonValue; id: string; createdAt: Date; updatedAt: Date; workflowId: string; workflowVersion: number; status: ExecutionStatus; retries: number; triggeredBy: string; startedAt: Date; endedAt: Date; currentStepId: string; }'.
+src/execution/execution.service.ts(70,23): error TS2339: Property 'log' does not exist on type 'PrismaService'.
+src/execution/execution.service.ts(97,15): error TS2820: Type '"CANCELLED"' is not assignable to type 'ExecutionStatus | EnumExecutionStatusFieldUpdateOperationsInput'. Did you mean '"CANCELED"'?
+src/logs/logs.service.ts(10,24): error TS2339: Property 'log' does not exist on type 'PrismaService'.
+src/logs/logs.service.ts(19,24): error TS2339: Property 'log' does not exist on type 'PrismaService'.
+src/rule-engine/rule-engine.service.spec.ts(64,11): error TS2353: Object literal may only specify known properties, and 'isDefault' does not exist in type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.spec.ts(74,11): error TS2353: Object literal may only specify known properties, and 'isDefault' does not exist in type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.spec.ts(84,11): error TS2353: Object literal may only specify known properties, and 'isDefault' does not exist in type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.spec.ts(115,27): error TS2339: Property 'isDefault' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.spec.ts(119,51): error TS2339: Property 'isDefault' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.ts(44,57): error TS2339: Property 'isDefault' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.
+src/rule-engine/rule-engine.service.ts(45,49): error TS2339: Property 'isDefault' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; priority: number; condition: string; stepId: string; nextStepId: string; }'.

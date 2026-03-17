@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "darwin-arm64"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────
+
+enum StepType {
+  TASK
+  APPROVAL
+  NOTIFICATION
+}
+
+enum ExecutionStatus {
+  PENDING
+  IN_PROGRESS
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELLED
+}
+
+// ─── Models ─────────────────────────────────────────────
+
+model Workflow {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  version      Int      @default(1)
+  isActive     Boolean  @default(true) @map("is_active")
+  inputSchema  Json?    @map("input_schema")
+  startStepId  String?  @map("start_step_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  steps      Step[]
+  executions Execution[]
+  startStep  Step?       @relation("WorkflowStartStep", fields: [startStepId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([name])
+  @@index([isActive])
+  @@index([startStepId])
+
+  @@map("workflows")
+}
+
+model Step {
+  id         String   @id @default(uuid()) @db.Uuid
+  workflowId String   @map("workflow_id") @db.Uuid
+  name       String
+  stepType   StepType @map("step_type")
+  order      Int      @default(0)
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workflow           Workflow      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  rules              Rule[]        @relation("StepRules")
+  targetedByRules    Rule[]        @relation("RuleNextStep")
+  executionLogs      ExecutionLog[]
+  currentExecutions  Execution[]   @relation("ExecutionCurrentStep")
+  workflowsAsStart   Workflow[]    @relation("WorkflowStartStep")
+
+  // Indexes
+  @@index([workflowId])
+  @@index([stepType])
+  @@index([workflowId, order])
+
+  @@map("steps")
+}
+
+model Rule {
+  id         String   @id @default(uuid()) @db.Uuid
+  stepId     String   @map("step_id") @db.Uuid
+  condition  String
+  nextStepId String?  @map("next_step_id") @db.Uuid
+  priority   Int      @default(0)
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  step     Step  @relation("StepRules", fields: [stepId], references: [id], onDelete: Cascade)
+  nextStep Step? @relation("RuleNextStep", fields: [nextStepId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([stepId])
+  @@index([nextStepId])
+  @@index([stepId, priority])
+
+  @@map("rules")
+}
+
+model Execution {
+  id              String          @id @default(uuid()) @db.Uuid
+  workflowId      String          @map("workflow_id") @db.Uuid
+  workflowVersion Int             @map("workflow_version")
+  status          ExecutionStatus @default(PENDING)
+  data            Json            @default("{}")
+  currentStepId   String?         @map("current_step_id") @db.Uuid
+  retries         Int             @default(0)
+  triggeredBy     String?         @map("triggered_by") @db.Uuid
+  startedAt       DateTime?       @map("started_at")
+  endedAt         DateTime?       @map("ended_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  workflow    Workflow       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  currentStep Step?          @relation("ExecutionCurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
+  logs        ExecutionLog[]
+
+  // Indexes
+  @@index([workflowId])
+  @@index([status])
+  @@index([currentStepId])
+  @@index([triggeredBy])
+  @@index([workflowId, status])
+
+  @@map("executions")
+}
+
+model ExecutionLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  executionId      String   @map("execution_id") @db.Uuid
+  stepId           String   @map("step_id") @db.Uuid
+  stepName         String   @map("step_name")
+  status           String
+  evaluatedRules   Json?    @map("evaluated_rules")
+  selectedNextStep String?  @map("selected_next_step")
+  errorMessage     String?  @map("error_message")
+  startedAt        DateTime @default(now()) @map("started_at")
+  endedAt          DateTime? @map("ended_at")
+
+  // Relations
+  execution Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step      Step      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([executionId])
+  @@index([stepId])
+  @@index([executionId, stepId])
+  @@index([status])
+
+  @@map("execution_logs")
+}
