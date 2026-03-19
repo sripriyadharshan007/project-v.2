@@ -3,12 +3,14 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { RuleEngineService } from '../rule-engine/rule-engine.service';
 import { SchemaValidationService } from './schema-validation.service';
 import { CreateExecutionDto } from './dto/create-execution.dto';
+import { Role } from '@prisma/client';
 
 const MAX_LOOP_ITERATIONS = 10;
 
@@ -26,7 +28,7 @@ export class ExecutionService {
   // ─── 1. Start Workflow Execution ────────────────────────
 
   async startExecution(createExecutionDto: CreateExecutionDto) {
-    const { workflowId, context } = createExecutionDto;
+    const { workflowId, context, actorRole } = createExecutionDto;
 
     // 1. Validate input is an object
     if (!context || typeof context !== 'object' || Array.isArray(context)) {
@@ -76,7 +78,10 @@ export class ExecutionService {
       data: {
         workflowId,
         workflowVersion: workflow.version,
-        data: context as any,
+        data: {
+          ...(context as any),
+          ...(actorRole ? { __actorRole: actorRole } : {}),
+        } as any,
         status: 'RUNNING',
         currentStepId: startStepId, // 3. current_step = start_step
         startedAt: new Date(),
@@ -92,6 +97,9 @@ export class ExecutionService {
 
     this.logger.log(
       `Execution ${execution.id} started for workflow ${workflowId} v${workflow.version}`,
+    );
+    this.logger.log(
+      `[NOTIFY] Execution ${execution.id}: starting at step ${startStepId}`,
     );
 
     return execution;
@@ -124,7 +132,89 @@ export class ExecutionService {
     const startedAt = new Date();
 
     try {
+      // Role guard: if step has a role, caller must match it
+      if (step.role) {
+        const actor = context.__actorRole as Role | undefined;
+        if (!actor) {
+          throw new ForbiddenException(
+            `Role required to execute step "${step.name}". Expected ${step.role}.`,
+          );
+        }
+        if (actor !== step.role) {
+          throw new ForbiddenException(
+            `Insufficient role for step "${step.name}". Expected ${step.role}, got ${actor}.`,
+          );
+        }
+      }
+
       this.logger.log(`Executing step: ${step.name} (${step.id})`);
+      this.logger.log(
+        `[NOTIFY] Execution ${executionId}: entered step "${step.name}" (${step.id})`,
+      );
+
+      // Notification step email logic (console-only unless an email sender exists)
+      const emailAuditEvents: any[] = [];
+      if (step.stepType === 'NOTIFICATION') {
+        const meta = (step.metadata || {}) as Record<string, any>;
+        const emailTo = meta.emailTo as string | undefined;
+        const subjectTmpl = (meta.subject as string | undefined) ?? 'Workflow Update';
+        const messageTmpl =
+          (meta.message as string | undefined) ??
+          'Your request of ₹{amount} is {status}';
+
+        const derivedStatus =
+          (context.status as string | undefined) ??
+          (context.__workflowStatus as string | undefined) ??
+          undefined;
+
+        const important = new Set(['APPROVED', 'REJECTED', 'COMPLETED']);
+        const statusForEmail =
+          typeof derivedStatus === 'string'
+            ? derivedStatus.toUpperCase()
+            : undefined;
+
+        const amount =
+          context.amount ??
+          context.totalAmount ??
+          context.requestAmount ??
+          undefined;
+
+        const interpolate = (tmpl: string) =>
+          tmpl
+            .replaceAll('{amount}', amount === undefined ? '' : String(amount))
+            .replaceAll('{status}', statusForEmail ?? '');
+
+        if (!emailTo) {
+          emailAuditEvents.push({
+            type: 'email',
+            status: 'skipped',
+            reason: 'metadata.emailTo not configured',
+          });
+        } else if (!statusForEmail || !important.has(statusForEmail)) {
+          emailAuditEvents.push({
+            type: 'email',
+            status: 'skipped',
+            to: emailTo,
+            reason: `status not important (${statusForEmail ?? 'unknown'})`,
+          });
+        } else {
+          const subject = interpolate(subjectTmpl) || 'Workflow Update';
+          const message = interpolate(messageTmpl);
+
+          // Existing email setup not found in this repo; console log is used as the send mechanism.
+          this.logger.log(
+            `[EMAIL] to=${emailTo} subject="${subject}" message="${message}"`,
+          );
+
+          emailAuditEvents.push({
+            type: 'email',
+            status: 'sent',
+            to: emailTo,
+            subject,
+            message,
+          });
+        }
+      }
 
       // Loop Detection
       const counters = (context.__loopCounters || {}) as Record<string, number>;
@@ -148,6 +238,15 @@ export class ExecutionService {
         context,
       );
 
+      // If this is an approval step, capture APPROVED into context so a later NOTIFICATION step can email.
+      if (step.stepType === 'APPROVAL') {
+        context.__workflowStatus = 'APPROVED';
+      }
+      // If this is a task step that represents a rejection, allow workflow builders to set it explicitly.
+      if (typeof context.status === 'string' && context.status.toUpperCase() === 'REJECTED') {
+        context.__workflowStatus = 'REJECTED';
+      }
+
       // Log SUCCESS
       await this.prisma.executionLog.create({
         data: {
@@ -155,15 +254,33 @@ export class ExecutionService {
           stepId,
           stepName: step.name,
           status: 'completed', // lowercase per user example
-          evaluatedRules: matchedRule ? [{ rule: matchedRule.condition, result: true }] : [], // mock evaluated rule array as per user example
+          evaluatedRules: [
+            ...(matchedRule ? [{ rule: matchedRule.condition, result: true }] : []),
+            ...emailAuditEvents,
+          ],
           selectedNextStep: matchedRule?.nextStepId ? (await this.prisma.step.findUnique({ where: { id: matchedRule.nextStepId } }))?.name : null,
           startedAt,
           endedAt: new Date(),
         },
       });
 
+      // Persist any context mutations (e.g., __workflowStatus) after step finishes
+      await this.prisma.execution.update({
+        where: { id: executionId },
+        data: { data: context },
+      });
+
       // 7. Update execution state
       if (matchedRule?.nextStepId) {
+        const nextStep = await this.prisma.step.findUnique({
+          where: { id: matchedRule.nextStepId },
+          select: { id: true, name: true },
+        });
+
+        this.logger.log(
+          `[NOTIFY] Execution ${executionId}: step "${step.name}" → next "${nextStep?.name ?? matchedRule.nextStepId}" (${matchedRule.nextStepId})`,
+        );
+
         // Move to next step
         await this.prisma.execution.update({
           where: { id: executionId },
@@ -176,6 +293,12 @@ export class ExecutionService {
           context,
         );
       } else {
+        // Mark completion in context so terminal NOTIFICATION steps (if any) can use it.
+        context.__workflowStatus = 'COMPLETED';
+        this.logger.log(
+          `[NOTIFY] Execution ${executionId}: step "${step.name}" has no next step (ending workflow)`,
+        );
+
         // Workflow completes — no next step
         await this.prisma.execution.update({
           where: { id: executionId },
@@ -185,23 +308,27 @@ export class ExecutionService {
         this.logger.log(`Execution ${executionId} completed.`);
       }
     } catch (error) {
+      const isForbidden =
+        error instanceof ForbiddenException ||
+        (typeof error?.message === 'string' && error.message.toLowerCase().includes('role'));
+
       // Log FAILED step
       await this.prisma.executionLog.create({
         data: {
           executionId,
           stepId,
           stepName: step.name,
-          status: 'failed',
-          errorMessage: error.message,
+          status: isForbidden ? 'rejected' : 'failed',
+          errorMessage: error.message || 'Execution rejected',
           startedAt,
           endedAt: new Date(),
         },
       });
 
-      // Mark execution as FAILED
+      // Mark execution as REJECTED or FAILED
       await this.prisma.execution.update({
         where: { id: executionId },
-        data: { status: 'FAILED', currentStepId: stepId },
+        data: { status: isForbidden ? 'REJECTED' : 'FAILED', currentStepId: stepId },
       });
 
       this.logger.error(

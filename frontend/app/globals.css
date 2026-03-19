@@ -1,7 +1,62 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 html, body {
   height: 100%;
+}
+
+/* Theme tokens (default: light). Toggle via `html.dark` */
+:root {
+  --background: 248 250 252; /* slate-50 */
+  --foreground: 15 23 42;   /* slate-900 */
+  --surface: 255 255 255;   /* white */
+  --surface2: 241 245 249;  /* slate-100 */
+  --border: 226 232 240;    /* slate-200 */
+  --muted: 100 116 139;     /* slate-500 */
+}
+
+html.dark {
+  /* dark-blue theme */
+  --background: 2 6 23;     /* slate-950 */
+  --foreground: 248 250 252;/* slate-50 */
+  --surface: 15 23 42;      /* slate-900 */
+  --surface2: 30 41 59;     /* slate-800 */
+  --border: 30 41 59;       /* slate-800 */
+  --muted: 148 163 184;     /* slate-400 */
+}
+
+/* React Flow controls: fix white magnifier button on dark UI */
+.react-flow__controls-button {
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  color: rgb(var(--foreground)) !important;
+  fill: rgb(var(--foreground)) !important;
+}
+.react-flow__controls-button:hover {
+  background: rgb(var(--surface2)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+/* React Flow dark canvas */
+.react-flow__renderer,
+.react-flow__viewport {
+  background: transparent !important;
+}
+.react-flow {
+  background-color: #020617 !important; /* slate-950 */
+}
+.react-flow__minimap {
+  background-color: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 8px !important;
+}
+.react-flow__panel {
+  background: transparent !important;
+}
+.react-flow__controls {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
 }

@@ -3,8 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { ArrowLeft, Loader2, AlertCircle, Save, Plus, GitGraph } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Save, GitGraph } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Box, Flex, VStack, HStack, Heading, Text, Button, Input, Textarea,
+  Icon, Switch, FormControl, FormLabel, Spinner, Alert, AlertIcon,
+  SimpleGrid, Code
+} from '@chakra-ui/react';
 
 interface Workflow {
   id: string;
@@ -25,7 +30,6 @@ export default function WorkflowEditorPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(false);
   const [inputSchemaStr, setInputSchemaStr] = useState('{}');
@@ -54,7 +58,7 @@ export default function WorkflowEditorPage() {
     try {
       setSaving(true);
       setError(null);
-      
+
       let parsedSchema = {};
       try {
         parsedSchema = JSON.parse(inputSchemaStr);
@@ -68,7 +72,6 @@ export default function WorkflowEditorPage() {
         inputSchema: parsedSchema,
       });
 
-      // Show success briefly
       alert('Workflow saved successfully!');
     } catch (err: any) {
       setError(err.message || err?.response?.data?.message || 'Failed to save workflow.');
@@ -79,143 +82,157 @@ export default function WorkflowEditorPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[70vh] gap-3 text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin" />
-        <span>Loading editor…</span>
-      </div>
+      <Flex align="center" justify="center" h="70vh" gap={3} color="gray.400">
+        <Spinner size="md" />
+        <Text>Loading editor…</Text>
+      </Flex>
     );
   }
 
   if (error && !workflow) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
-        <AlertCircle className="w-10 h-10 text-rose-400" />
-        <p className="text-rose-400 font-medium">{error}</p>
-        <button onClick={() => router.back()} className="text-sm text-slate-400 hover:text-white underline">
-          Go back
-        </button>
-      </div>
+      <VStack justify="center" h="70vh" spacing={4}>
+        <Icon as={AlertCircle} w={10} h={10} color="red.400" />
+        <Text color="red.400" fontWeight="medium">{error}</Text>
+        <Button variant="link" color="gray.400" onClick={() => router.back()}>Go back</Button>
+      </VStack>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Edit Workflow</h1>
-            <p className="text-sm text-slate-400">
-              v{workflow?.version} &nbsp;·&nbsp; ID: {workflow?.id}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/workflows/${workflowId}/graph`}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium text-sm border border-slate-700 hover:border-slate-600"
-          >
-            <GitGraph className="w-4 h-4" />
-            View Graph
-          </Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium text-sm"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </button>
-        </div>
-      </div>
+    <Box maxW="4xl" mx="auto">
+      <VStack spacing={8} align="stretch">
+        {/* Header */}
+        <Flex align="center" justify="space-between">
+          <HStack spacing={4}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              p={2}
+              rounded="lg"
+            >
+              <Icon as={ArrowLeft} w={5} h={5} />
+            </Button>
+            <Box>
+              <Heading size="lg">Edit Workflow</Heading>
+              <Text fontSize="sm" color="gray.500">
+                v{workflow?.version} &nbsp;·&nbsp; ID: {workflow?.id}
+              </Text>
+            </Box>
+          </HStack>
+          <HStack spacing={3}>
+            <Button
+              as={Link}
+              href={`/workflows/${workflowId}/graph`}
+              leftIcon={<Icon as={GitGraph} w={4} h={4} />}
+              variant="outline"
+              size="sm"
+            >
+              View Graph
+            </Button>
+            <Button
+              leftIcon={saving ? <Spinner size="xs" /> : <Icon as={Save} w={4} h={4} />}
+              colorScheme="purple"
+              size="sm"
+              onClick={handleSave}
+              isDisabled={saving}
+            >
+              Save Changes
+            </Button>
+          </HStack>
+        </Flex>
 
-      {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-          <p className="text-rose-400 text-sm">{error}</p>
-        </div>
-      )}
+        {error && (
+          <Alert status="error" rounded="lg">
+            <AlertIcon />
+            <Text fontSize="sm">{error}</Text>
+          </Alert>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Main Settings */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-white mb-4">General Settings</h2>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Workflow Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="e.g., Expense Approval"
-              />
-            </div>
-
-            <div className="pt-2">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                  />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${isActive ? 'bg-indigo-500' : 'bg-slate-700'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isActive ? 'translate-x-4' : ''}`}></div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">Active Status</div>
-                  <div className="text-xs text-slate-500">Enable or disable this workflow execution</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Input Schema (JSON)</h2>
-            </div>
-            <p className="text-xs text-slate-400 mb-2">Define the required input fields using a flat-property map (e.g. <code>{`{ "amount": {"type": "number", "required": true} }`}</code>)</p>
-            <div className="space-y-2">
-              <textarea
-                value={inputSchemaStr}
-                onChange={(e) => setInputSchemaStr(e.target.value)}
-                className="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                spellCheck="false"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Currently, steps and rules must be configured via the API or Graph view. 
-                Full visual builder coming soon!
-              </p>
-              
-              <Link
-                href={`/workflows/${workflowId}/graph`}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-colors font-medium border border-indigo-500/20"
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+          {/* Main Settings */}
+          <Box gridColumn={{ md: 'span 2' }}>
+            <VStack spacing={6} align="stretch">
+              <Box
+                bg="white" _dark={{ bg: 'gray.800', borderColor: 'gray.700' }}
+                border="1px" borderColor="gray.200"
+                rounded="xl" p={6} shadow="sm"
               >
-                <GitGraph className="w-4 h-4" />
+                <Heading size="md" mb={4}>General Settings</Heading>
+
+                <FormControl mb={4}>
+                  <FormLabel fontSize="sm">Workflow Name</FormLabel>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., Expense Approval"
+                    bg="gray.50" _dark={{ bg: 'gray.900' }}
+                  />
+                </FormControl>
+
+                <FormControl display="flex" alignItems="center">
+                  <Switch
+                    colorScheme="purple"
+                    isChecked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    mr={3}
+                  />
+                  <Box>
+                    <FormLabel mb={0} fontSize="sm">Active Status</FormLabel>
+                    <Text fontSize="xs" color="gray.500">Enable or disable this workflow execution</Text>
+                  </Box>
+                </FormControl>
+              </Box>
+
+              <Box
+                bg="white" _dark={{ bg: 'gray.800' }}
+                border="1px" borderColor="gray.200"
+                rounded="xl" p={6} shadow="sm"
+              >
+                <Heading size="md" mb={2}>Input Schema (JSON)</Heading>
+                <Text fontSize="xs" color="gray.500" mb={4}>
+                  Define the required input fields using a flat-property map (e.g. <Code fontSize="xs">{`{ "amount": {"type": "number", "required": true} }`}</Code>)
+                </Text>
+                <Textarea
+                  value={inputSchemaStr}
+                  onChange={(e) => setInputSchemaStr(e.target.value)}
+                  fontFamily="mono"
+                  fontSize="sm"
+                  h="256px"
+                  bg="gray.50" _dark={{ bg: 'gray.900' }}
+                  spellCheck={false}
+                />
+              </Box>
+            </VStack>
+          </Box>
+
+          {/* Sidebar */}
+          <Box>
+            <Box
+              bg="white" _dark={{ bg: 'gray.800' }}
+              border="1px" borderColor="gray.200"
+              rounded="xl" p={6} shadow="sm"
+            >
+              <Heading size="sm" textTransform="uppercase" letterSpacing="wider" mb={4}>Quick Actions</Heading>
+              <Text fontSize="sm" color="gray.500" mb={4}>
+                Currently, steps and rules must be configured via the API or Graph view.
+                Full visual builder coming soon!
+              </Text>
+              <Button
+                as={Link}
+                href={`/workflows/${workflowId}/graph`}
+                leftIcon={<Icon as={GitGraph} w={4} h={4} />}
+                colorScheme="purple"
+                variant="outline"
+                w="full"
+              >
                 Open Visual Graph
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              </Button>
+            </Box>
+          </Box>
+        </SimpleGrid>
+      </VStack>
+    </Box>
   );
 }

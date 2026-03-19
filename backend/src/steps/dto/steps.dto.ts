@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { PartialType, OmitType } from '@nestjs/swagger';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StepType } from '@prisma/client';
+import { StepType, Role } from '@prisma/client';
 
 // ─── Create ─────────────────────────────────────────────
 
@@ -34,7 +34,22 @@ export class CreateStepDto {
   @IsOptional()
   order?: number;
 
-  @ApiPropertyOptional({ example: { endpoint: '/send', method: 'POST' } })
+  @ApiPropertyOptional({ enum: Role, example: 'ADMIN' })
+  @IsEnum(Role, {
+    message: `role must be one of: ${Object.values(Role).join(', ')}`,
+  })
+  @IsOptional()
+  role?: Role;
+
+  @ApiPropertyOptional({
+    example: {
+      emailTo: 'user@example.com',
+      subject: 'Workflow Update',
+      message: 'Your request of ₹{amount} is {status}',
+    },
+    description:
+      'Free-form per-step configuration. For NOTIFICATION steps, you can define emailTo/subject/message templates.',
+  })
   @IsObject()
   @IsOptional()
   metadata?: Record<string, any> | null;

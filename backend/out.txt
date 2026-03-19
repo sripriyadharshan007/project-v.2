@@ -1,0 +1,72 @@
+
+> workflow-engine-backend@1.0.0 start
+> nest start
+
+(node:145244) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +29ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +3ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mRuleEngineModule dependencies initialized[39m[38;5;3m +8ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +3ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mLogsModule dependencies initialized[39m[38;5;3m +3ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWorkflowModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mStepsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mRulesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBullModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mQueueModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mExecutionModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/}:[39m[38;5;3m +17ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWorkflowController {/workflow}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/workflow, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/workflow, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/workflow/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/workflow/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/workflow/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mStepsController {/steps}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/steps, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/steps/workflow/:workflowId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/steps/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/steps/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/steps/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mRulesController {/rules}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/rules, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/rules/step/:stepId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/rules/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/rules/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/rules/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mExecutionController {/executions}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/executions/start, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/executions/:id/cancel, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/executions/:id/retry/:stepId, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/executions, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/executions/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mLogsController {/logs}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/logs/execution/:executionId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +28ms[39m
+[31m[Nest] 142324  - [39m18/03/2026, 8:11:29 pm [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3001[39m[38;5;3m +2ms[39m
+node:net:1948
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3001
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at ExpressAdapter.listen (D:\project 1\backend\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\project 1\backend\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\project 1\backend\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\project 1\backend\src\main.ts:22:3) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3001
+}
+
+Node.js v24.14.0

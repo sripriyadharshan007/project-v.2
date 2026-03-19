@@ -6,6 +6,7 @@ import { StepsModule } from './steps/steps.module';
 import { RulesModule } from './rules/rules.module';
 import { ExecutionModule } from './execution/execution.module';
 import { LogsModule } from './logs/logs.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -25,5 +26,6 @@ import { LogsModule } from './logs/logs.module';
     ExecutionModule,
     LogsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

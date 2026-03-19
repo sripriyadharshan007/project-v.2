@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Plus, Edit2, Play, Trash2, Calendar, CheckCircle2, XCircle, GitGraph } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  Box, Flex, VStack, HStack, Heading, Text, Button, Input, Select,
+  Table, Thead, Tbody, Tr, Th, Td, TableContainer, Badge, Spinner, Icon, IconButton
+} from '@chakra-ui/react';
 
 interface Workflow {
   id: string;
@@ -29,6 +33,9 @@ export default function WorkflowsPage() {
   const [data, setData] = useState<PaginatedResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
+  const [stepCounts, setStepCounts] = useState<Record<string, number>>({});
 
   const fetchWorkflows = async (currentPage: number) => {
     try {
@@ -46,6 +53,40 @@ export default function WorkflowsPage() {
     fetchWorkflows(page);
   }, [page]);
 
+  useEffect(() => {
+    const items = data?.data ?? [];
+    if (items.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const missing = items.filter((wf) => stepCounts[wf.id] === undefined);
+        if (missing.length === 0) return;
+
+        const counts = await Promise.all(
+          missing.map(async (wf) => {
+            const res = await api.get<any[]>(`/steps/workflow/${wf.id}`);
+            return [wf.id, Array.isArray(res.data) ? res.data.length : 0] as const;
+          }),
+        );
+
+        if (cancelled) return;
+        setStepCounts((prev) => {
+          const next = { ...prev };
+          for (const [id, count] of counts) next[id] = count;
+          return next;
+        });
+      } catch (e) {
+        console.warn('Failed to fetch step counts', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.data]);
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this workflow?')) return;
     try {
@@ -60,7 +101,7 @@ export default function WorkflowsPage() {
   const createWorkflow = async () => {
     try {
       const response = await api.post('/workflow', {
-        name: `New Workflow ${new Date().toLocaleTimeString()}`,
+        name: 'Untitled Workflow',
         isActive: false
       });
       router.push(`/workflows/${response.data.id}/editor`);
@@ -70,133 +111,187 @@ export default function WorkflowsPage() {
     }
   };
 
+  const items = data?.data ?? [];
+  const filtered = items.filter((wf) => {
+    const qq = q.trim().toLowerCase();
+    const matchesQuery = qq.length === 0 || wf.name.toLowerCase().includes(qq) || wf.id.toLowerCase().includes(qq);
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && wf.isActive) ||
+      (statusFilter === 'draft' && !wf.isActive);
+    return matchesQuery && matchesStatus;
+  });
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Workflows</h1>
-          <p className="text-slate-400 mt-1">Manage and orchestrate your automated processes.</p>
-        </div>
-        <button
+    <VStack spacing={6} align="stretch" w="full">
+      <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ sm: 'center' }} gap={4}>
+        <Box>
+          <Heading size="lg" letterSpacing="tight">Workflows</Heading>
+          <Text color="gray.500" mt={1}>Manage and orchestrate your automated processes.</Text>
+        </Box>
+        <Button
+          leftIcon={<Plus size={20} />}
+          colorScheme="purple"
           onClick={createWorkflow}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
+          shadow="md"
         >
-          <Plus className="w-5 h-5" />
           Create Workflow
-        </button>
-      </div>
+        </Button>
+      </Flex>
+
+      <Flex direction={{ base: 'column', md: 'row' }} gap={3} align={{ md: 'center' }} justify={{ md: 'space-between' }}>
+        <Flex direction={{ base: 'column', sm: 'row' }} gap={3} align={{ sm: 'center' }}>
+          <Box w={{ base: 'full', sm: '320px' }}>
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search by name or ID…"
+              bg="white" _dark={{ bg: 'gray.900' }}
+            />
+          </Box>
+          <Box w={{ base: 'full', sm: '192px' }}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              bg="white" _dark={{ bg: 'gray.900' }}
+            >
+              <option value="all" style={{ color: 'inherit', background: 'inherit' }}>All statuses</option>
+              <option value="active" style={{ color: 'inherit', background: 'inherit' }}>Active</option>
+              <option value="draft" style={{ color: 'inherit', background: 'inherit' }}>Draft</option>
+            </Select>
+          </Box>
+        </Flex>
+        <Text fontSize="sm" color="gray.500">
+          Showing <Text as="span" fontWeight="medium" color="gray.900" _dark={{ color: 'white' }}>{filtered.length}</Text> of{' '}
+          <Text as="span" fontWeight="medium" color="gray.900" _dark={{ color: 'white' }}>{items.length}</Text> on this page
+        </Text>
+      </Flex>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-400 animate-pulse">Loading workflows...</div>
+        <VStack py={12} spacing={4}>
+          <Spinner color="purple.500" size="xl" />
+          <Text color="gray.500">Loading workflows...</Text>
+        </VStack>
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/50 text-xs uppercase font-semibold text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Version</th>
-                  <th className="px-6 py-4">Created</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {data?.data.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                      No workflows found. Create your first one to get started!
-                    </td>
-                  </tr>
+        <Box bg="white" border="1px" borderColor="gray.200" _dark={{ bg: 'gray.800', borderColor: 'gray.700' }} rounded="xl" overflow="hidden" shadow="sm">
+          <TableContainer>
+            <Table variant="simple" size="md">
+              <Thead bg="gray.50" _dark={{ bg: 'gray.700' }}>
+                <Tr>
+                  <Th>ID</Th>
+                  <Th>Name</Th>
+                  <Th>Steps</Th>
+                  <Th>Status</Th>
+                  <Th>Version</Th>
+                  <Th textAlign="right">Actions</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {filtered.length === 0 ? (
+                  <Tr>
+                    <Td colSpan={6} textAlign="center" py={10} color="gray.500">
+                      No workflows match your search/filter.
+                    </Td>
+                  </Tr>
                 ) : (
-                  data?.data.map((wf) => (
-                    <tr key={wf.id} className="hover:bg-slate-800/50 transition-colors group">
-                      <td className="px-6 py-4 font-medium text-slate-200">
-                        {wf.name}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          wf.isActive 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                        }`}>
-                          {wf.isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                  filtered.map((wf) => (
+                    <Tr key={wf.id} _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }} role="group">
+                      <Td fontFamily="mono" fontSize="xs" color="gray.500">
+                        {wf.id.slice(0, 8)}…
+                      </Td>
+                      <Td fontWeight="medium">
+                        <VStack align="start" spacing={0.5}>
+                          <Text>{wf.name}</Text>
+                          <HStack fontSize="xs" color="gray.500">
+                            <Icon as={Calendar} w={3.5} h={3.5} opacity={0.6} />
+                            <Text>{format(new Date(wf.createdAt), 'MMM d, yyyy')}</Text>
+                          </HStack>
+                        </VStack>
+                      </Td>
+                      <Td>
+                        <Badge variant="subtle" px={2} py={1} rounded="md">
+                          {stepCounts[wf.id] === undefined ? '—' : stepCounts[wf.id]}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge
+                          colorScheme={wf.isActive ? 'green' : 'gray'}
+                          display="inline-flex"
+                          alignItems="center"
+                          gap={1.5}
+                          px={2}
+                          py={1}
+                          rounded="full"
+                        >
+                          <Icon as={wf.isActive ? CheckCircle2 : XCircle} w={3.5} h={3.5} />
                           {wf.isActive ? 'Active' : 'Draft'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-mono bg-slate-800 px-2 py-1 rounded text-xs text-slate-300">v{wf.version}</span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 opacity-50" />
-                        {format(new Date(wf.createdAt), 'MMM d, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link 
-                            href={`/workflows/${wf.id}/graph`}
-                            className="p-2 text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors"
-                            title="View Graph"
-                          >
-                            <GitGraph className="w-4 h-4" />
-                          </Link>
-                          <Link 
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge variant="outline" fontFamily="mono" px={2} py={1} rounded="md">
+                          v{wf.version}
+                        </Badge>
+                      </Td>
+                      <Td textAlign="right">
+                        <HStack spacing={1} justify="flex-end">
+                          <IconButton
+                            as={Link}
                             href={`/workflows/${wf.id}/editor`}
-                            className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                            title="Edit Workflow"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Link>
-                          <Link 
+                            aria-label="Edit Workflow"
+                            icon={<Icon as={Edit2} w={4} h={4} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="purple"
+                          />
+                          <IconButton
+                            as={Link}
                             href={`/workflows/${wf.id}/execute`}
-                            className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                            title="Execute Workflow"
-                          >
-                            <Play className="w-4 h-4" />
-                          </Link>
-                          <button
+                            aria-label="Execute Workflow"
+                            icon={<Icon as={Play} w={4} h={4} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="green"
+                          />
+                          <IconButton
+                            as={Link}
+                            href={`/workflows/${wf.id}/graph`}
+                            aria-label="View Graph"
+                            icon={<Icon as={GitGraph} w={4} h={4} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="purple"
+                          />
+                          <IconButton
+                            aria-label="Delete Workflow"
+                            icon={<Icon as={Trash2} w={4} h={4} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
                             onClick={() => handleDelete(wf.id)}
-                            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                            title="Delete Workflow"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                          />
+                        </HStack>
+                      </Td>
+                    </Tr>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </Tbody>
+            </Table>
+          </TableContainer>
           
-          {/* Pagination Controls */}
           {data && data.totalPages > 1 && (
-            <div className="border-t border-slate-800 px-6 py-4 flex items-center justify-between text-sm">
-              <span className="text-slate-400">
-                Showing page <span className="font-medium text-white">{data.page}</span> of{' '}
-                <span className="font-medium text-white">{data.totalPages}</span>
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={data.page === 1}
-                  className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
-                  disabled={data.page === data.totalPages}
-                  className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <Flex borderTop="1px" borderColor="gray.200" _dark={{ borderColor: 'gray.700' }} px={6} py={4} align="center" justify="space-between" fontSize="sm">
+              <Text color="gray.500">
+                Showing page <Text as="span" fontWeight="medium" color="gray.900" _dark={{ color: 'white' }}>{data.page}</Text> of{' '}
+                <Text as="span" fontWeight="medium" color="gray.900" _dark={{ color: 'white' }}>{data.totalPages}</Text>
+              </Text>
+              <HStack spacing={2}>
+                <Button size="sm" variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} isDisabled={data.page === 1}>Previous</Button>
+                <Button size="sm" variant="outline" onClick={() => setPage(p => Math.min(data.totalPages, p + 1))} isDisabled={data.page === data.totalPages}>Next</Button>
+              </HStack>
+            </Flex>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </VStack>
   );
 }
